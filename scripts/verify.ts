@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isValid, outputPath, run, un, WORD_PATTERN, writeEntry } from "../main.ts";
+import { getWord, isValid, outputPath, run, WORD_PATTERN, writeEntry } from "../main.ts";
 
 const failures: string[] = [];
 const check = (condition: boolean, message: string): void => {
@@ -12,8 +12,8 @@ const dir = mkdtempSync(join(tmpdir(), "entry-verify-"));
 process.env.ENTRY_OUTPUT_PATH = join(dir, "nested", "entry.txt");
 
 try {
-  const first = un();
-  const second = un();
+  const first = getWord();
+  const second = getWord();
   check(first === second, `non-deterministic: ${first} vs ${second}`);
   check(/^[A-Za-z][A-Za-z-]{0,29}$/.test(first) || WORD_PATTERN.test(first), `not a single word: ${first}`);
   check(isValid(first), `isValid rejected: ${first}`);
@@ -27,6 +27,8 @@ try {
   check(run(["--check-only"]) === 0, "--check-only did not exit 0");
   check(run(["--stats"]) === 0, "--stats did not exit 0");
   check(run([]) === 0, "default run did not exit 0");
+  check(run(["--bogus"]) === 2, "unknown flag did not exit 2");
+  check(run(["--print", "--nope"]) === 2, "unknown flag mixed with known flag did not exit 2");
   check(readFileSync(outputPath(), "utf8") === first, "run() did not write the entry to ENTRY_OUTPUT_PATH");
   check(outputPath() === process.env.ENTRY_OUTPUT_PATH, "output path resolution wrong");
   if (failures.length === 0) console.log(`ok ${first}`);

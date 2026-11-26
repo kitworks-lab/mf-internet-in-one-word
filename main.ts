@@ -7,8 +7,9 @@ const DEFAULT_OUTPUT_PATH = "/output/entry.txt";
 export const WORD_PATTERN = /^[A-Za-z]{1,30}$/;
 const MAX_CHARS = 30;
 const MAX_BYTES = 30;
+const KNOWN_FLAGS = new Set(["--print", "--stats", "--check-only"]);
 
-export function un(): string {
+export function getWord(): string {
   return WORD;
 }
 
@@ -32,7 +33,12 @@ export function writeEntry(word: string, path: string = outputPath()): void {
 }
 
 export function run(argv: readonly string[]): number {
-  const word = un();
+  const unknown = argv.filter((arg) => !KNOWN_FLAGS.has(arg));
+  if (unknown.length > 0) {
+    console.error(`unknown argument(s): ${unknown.join(", ")}`);
+    return 2;
+  }
+  const word = getWord();
   if (!isValid(word)) {
     console.error(`invalid entry: ${JSON.stringify(word)}`);
     return 1;
